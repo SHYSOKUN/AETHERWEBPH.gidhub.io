@@ -9,8 +9,8 @@
     <style>
         :root { 
             --accent: #ff0033; 
-            --glass: rgba(0, 0, 0, 0.7);
-            --border: rgba(255, 255, 255, 0.1);
+            --glass: rgba(0, 0, 0, 0.8);
+            --border: rgba(255, 255, 255, 0.15);
         }
         
         body, html { 
@@ -29,10 +29,10 @@
             position: absolute; top: 50%; left: 50%;
             transform: translate(-50%, -50%);
             object-fit: cover;
-            filter: brightness(0.4);
+            filter: brightness(0.35);
         }
 
-        /* MODERN HEADER */
+        /* HEADER */
         header { 
             height: 70px; display: flex; align-items: center; justify-content: center;
             padding: 10px 15px; z-index: 100; position: relative;
@@ -40,72 +40,75 @@
 
         .search-container {
             display: flex; width: 100%; max-width: 500px; gap: 8px;
-            background: var(--glass); padding: 6px; border-radius: 15px;
-            border: 1px solid var(--border); backdrop-filter: blur(10px);
+            background: var(--glass); padding: 5px; border-radius: 12px;
+            border: 1px solid var(--border); backdrop-filter: blur(15px);
         }
 
         .search-bar {
             flex-grow: 1; background: transparent; border: none;
-            padding: 10px; color: white; font-size: 15px; outline: none;
+            padding: 10px; color: white; font-size: 14px; outline: none;
         }
 
         .add-btn {
-            background: var(--accent); color: white; border: none; border-radius: 10px;
-            padding: 0 15px; font-weight: 800; cursor: pointer; font-size: 12px;
+            background: var(--accent); color: white; border: none; border-radius: 8px;
+            padding: 0 15px; font-weight: 900; cursor: pointer; font-size: 11px;
         }
 
-        /* GRID: MEHR PLATZ NACH UNTEN */
+        /* GRID */
         .grid { 
-            position: absolute; top: 85px; bottom: 140px; left: 0; right: 0;
+            position: absolute; top: 80px; bottom: 200px; left: 0; right: 0;
             padding: 0 15px; display: grid; 
-            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); 
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); 
             gap: 12px; overflow-y: auto; scrollbar-width: none;
             -webkit-overflow-scrolling: touch;
         }
         
-        .card { cursor: pointer; border-radius: 12px; overflow: hidden; background: var(--glass); border: 1px solid var(--border); transition: 0.2s; }
+        .card { cursor: pointer; border-radius: 10px; overflow: hidden; background: var(--glass); border: 1px solid var(--border); }
         .card img { width: 100%; aspect-ratio: 16/9; object-fit: cover; }
-        .card-info { padding: 8px; font-size: 11px; font-weight: 700; height: 32px; overflow: hidden; }
+        .card-info { padding: 8px; font-size: 11px; font-weight: 700; height: 30px; overflow: hidden; text-transform: uppercase; }
 
-        /* MODERN FLOATING HUD (MOBILE FIRST) */
+        /* NEUES HANDY-OPTIMIERTES HUD */
         footer {
-            position: fixed; bottom: 15px; left: 15px; right: 15px;
-            height: auto; background: var(--glass); 
+            position: fixed; bottom: 10px; left: 10px; right: 10px;
+            background: var(--glass); 
             border: 1px solid var(--border); border-radius: 20px;
             display: flex; flex-direction: column; 
-            padding: 12px; box-sizing: border-box; backdrop-filter: blur(25px);
-            z-index: 200; gap: 8px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            padding: 15px; box-sizing: border-box; backdrop-filter: blur(25px);
+            z-index: 200; gap: 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.8);
         }
 
-        /* DESKTOP RESTORE */
-        @media (min-width: 768px) {
-            footer { 
-                bottom: 0; left: 0; right: 0; border-radius: 0; 
-                flex-direction: row; height: 100px; padding: 0 30px;
-                display: grid; grid-template-columns: 250px 1fr 250px;
-            }
-            .grid { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); bottom: 110px; }
-            .vol-cell { display: flex !important; }
-        }
+        /* Song-Zeile */
+        .track-row { display: flex; align-items: center; gap: 12px; width: 100%; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+        #track-art { width: 45px; height: 45px; border-radius: 6px; border: 1px solid var(--accent); object-fit: cover; }
+        #track-name { font-size: 13px; font-weight: 900; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-grow: 1; color: #eee; }
 
-        .track-cell { display: flex; align-items: center; gap: 10px; }
-        #track-art { width: 40px; height: 40px; border-radius: 8px; border: 1px solid var(--accent); object-fit: cover; }
-        #track-name { font-size: 13px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-grow: 1; }
-
-        .player-cell { display: flex; flex-direction: column; align-items: center; width: 100%; gap: 5px; }
-        .controls-row { display: flex; gap: 25px; align-items: center; }
+        /* Control-Zeile */
+        .controls-main { display: flex; align-items: center; justify-content: space-between; width: 100%; }
         
-        .play-btn { width: 45px; height: 45px; border-radius: 50%; background: #fff; color: #000; border: none; font-size: 18px; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 15px rgba(255,255,255,0.2); }
-        .nav-btn { background: none; border: none; color: #bbb; font-weight: 900; font-size: 10px; padding: 10px; }
+        .play-btn { width: 50px; height: 50px; border-radius: 50%; background: #fff; color: #000; border: none; font-size: 20px; display: flex; align-items: center; justify-content: center; }
+        .nav-btn { background: none; border: none; color: #999; font-weight: 900; font-size: 10px; padding: 10px; }
 
-        #scrub { width: 100%; accent-color: var(--accent); height: 4px; border-radius: 2px; }
+        /* Volume & Loop Gruppe */
+        .utility-row { display: flex; align-items: center; justify-content: center; gap: 20px; width: 100%; }
+        
+        .vol-container { display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.05); padding: 5px 12px; border-radius: 20px; border: 1px solid var(--border); }
+        .vol-slider { width: 80px; accent-color: var(--accent); height: 4px; cursor: pointer; }
+        #v-val { font-size: 12px; font-weight: 900; color: var(--accent); min-width: 20px; }
 
-        .loop-btn { background: none; border: 1px solid #444; color: #888; padding: 3px 8px; border-radius: 10px; font-size: 9px; font-weight: 800; margin-top: 2px; }
-        .loop-btn.active { border-color: var(--accent); color: var(--accent); }
+        .loop-btn { background: none; border: 1px solid #444; color: #888; padding: 5px 12px; border-radius: 15px; font-size: 9px; font-weight: 800; text-transform: uppercase; }
+        .loop-btn.active { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 10px rgba(255,0,51,0.3); }
 
-        .vol-cell { display: none; justify-content: flex-end; align-items: center; gap: 10px; }
-        #v-val { font-weight: 900; color: var(--accent); font-size: 16px; width: 30px; }
+        /* Progress Bar Ganz unten im HUD */
+        #scrub { width: 100%; accent-color: var(--accent); height: 4px; border-radius: 2px; margin-top: 5px; }
+
+        /* Desktop Layout (Bleibt erhalten) */
+        @media (min-width: 768px) {
+            footer { bottom: 0; left: 0; right: 0; border-radius: 0; height: 110px; padding: 0 40px; display: grid; grid-template-columns: 300px 1fr 300px; align-items: center; }
+            .track-row { border: none; padding: 0; }
+            .grid { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); bottom: 130px; }
+            .utility-row { justify-content: flex-end; }
+        }
     </style>
 </head>
 <body onclick="forceEngagement()">
@@ -118,7 +121,7 @@
 
     <header>
         <div class="search-container">
-            <input type="text" class="search-bar" id="searchInp" placeholder="Song/URL..." onkeydown="if(event.key==='Enter') startProcess(this.value)">
+            <input type="text" class="search-bar" id="searchInp" placeholder="SONG / URL..." onkeydown="if(event.key==='Enter') startProcess(this.value)">
             <button class="add-btn" onclick="startProcess(document.getElementById('searchInp').value)">ADD</button>
         </div>
     </header>
@@ -126,25 +129,26 @@
     <div class="grid" id="grid"></div>
 
     <footer>
-        <div class="track-cell">
+        <div class="track-row">
             <img id="track-art" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7">
-            <div id="track-name">Aether Player</div>
+            <div id="track-name">BEREIT FÜR SOUND</div>
         </div>
 
-        <div class="player-cell">
-            <input type="range" id="scrub" value="0" step="1" oninput="manualSeek(this.value)">
-            <div class="controls-row">
-                <button class="nav-btn" onclick="yt.previousVideo()">PREV</button>
-                <button class="play-btn" id="m-play" onclick="togglePlay()">▶</button>
-                <button class="nav-btn" onclick="yt.nextVideo()">NEXT</button>
+        <div class="controls-main">
+            <button class="nav-btn" onclick="yt.previousVideo()">PREV</button>
+            <button class="play-btn" id="m-play" onclick="togglePlay()">▶</button>
+            <button class="nav-btn" onclick="yt.nextVideo()">NEXT</button>
+        </div>
+
+        <div class="utility-row">
+            <div class="vol-container">
+                <span id="v-val">50</span>
+                <input type="range" class="vol-slider" oninput="changeVol(this.value)" value="50" min="0" max="100">
             </div>
             <button class="loop-btn" id="loop-toggle" onclick="toggleLoop()">LOOP: OFF</button>
         </div>
 
-        <div class="vol-cell">
-            <span id="v-val">50</span>
-            <input type="range" oninput="changeVol(this.value)" value="50" min="0" max="100" style="accent-color:var(--accent); width: 70px;">
-        </div>
+        <input type="range" id="scrub" value="0" step="1" oninput="manualSeek(this.value)">
     </footer>
 
     <div id="player" style="position:absolute; top:-1000px;"></div>
