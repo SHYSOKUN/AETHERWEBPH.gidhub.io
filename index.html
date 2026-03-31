@@ -9,19 +9,22 @@
     <style>
         :root { 
             --accent: #ff0033; 
-            --glass: rgba(0, 0, 0, 0.8);
-            --border: rgba(255, 255, 255, 0.15);
+            --glass: rgba(0, 0, 0, 0.82); /* Leicht dunkler für besseren Kontrast auf Schwarz */
+            --border: rgba(255, 255, 255, 0.12);
         }
         
+        /* TIEFSCHWARZER HINTERGRUND FÜR DIE WEBSEITE */
         body, html { 
             margin: 0; padding: 0; height: 100vh; width: 100vw;
             font-family: 'Inter', sans-serif; color: white;
-            overflow: hidden; background-color: #000; 
+            overflow: hidden; 
+            background-color: #000000; /* Reines Schwarz */
         }
 
         #video-container {
             position: fixed; inset: 0; width: 100vw; height: 100vh;
             z-index: -2; overflow: hidden;
+            background-color: #000000; /* Fallback für das Video */
         }
 
         #video-bg {
@@ -29,7 +32,7 @@
             position: absolute; top: 50%; left: 50%;
             transform: translate(-50%, -50%);
             object-fit: cover;
-            filter: brightness(0.35);
+            filter: brightness(0.35); /* Video leicht abgedunkelt, damit UI knallt */
         }
 
         /* HEADER */
@@ -49,65 +52,75 @@
             padding: 10px; color: white; font-size: 14px; outline: none;
         }
 
+        .search-bar::placeholder { color: rgba(255,255,255,0.5); }
+
         .add-btn {
             background: var(--accent); color: white; border: none; border-radius: 8px;
             padding: 0 15px; font-weight: 900; cursor: pointer; font-size: 11px;
+            text-transform: uppercase;
         }
+        .add-btn:active { transform: scale(0.96); }
 
         /* GRID */
         .grid { 
             position: absolute; top: 80px; bottom: 200px; left: 0; right: 0;
             padding: 0 15px; display: grid; 
-            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); 
+            grid-template-columns: repeat(auto-fill, minmax(135px, 1fr)); 
             gap: 12px; overflow-y: auto; scrollbar-width: none;
             -webkit-overflow-scrolling: touch;
         }
+        .grid::-webkit-scrollbar { display: none; }
         
-        .card { cursor: pointer; border-radius: 10px; overflow: hidden; background: var(--glass); border: 1px solid var(--border); }
+        .card { cursor: pointer; border-radius: 10px; overflow: hidden; background: var(--glass); border: 1px solid var(--border); transition: transform 0.2s; }
+        .card:active { transform: scale(0.98); }
         .card img { width: 100%; aspect-ratio: 16/9; object-fit: cover; }
-        .card-info { padding: 8px; font-size: 11px; font-weight: 700; height: 30px; overflow: hidden; text-transform: uppercase; }
+        .card-info { padding: 8px; font-size: 11px; font-weight: 700; height: 30px; overflow: hidden; text-transform: uppercase; color: #eee; }
 
-        /* NEUES HANDY-OPTIMIERTES HUD */
+        /* MOBILE OPTIMIZED HUD */
         footer {
-            position: fixed; bottom: 10px; left: 10px; right: 10px;
+            position: fixed; bottom: 12px; left: 12px; right: 12px;
             background: var(--glass); 
             border: 1px solid var(--border); border-radius: 20px;
             display: flex; flex-direction: column; 
             padding: 15px; box-sizing: border-box; backdrop-filter: blur(25px);
             z-index: 200; gap: 12px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.8);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.7);
         }
 
         /* Song-Zeile */
         .track-row { display: flex; align-items: center; gap: 12px; width: 100%; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
-        #track-art { width: 45px; height: 45px; border-radius: 6px; border: 1px solid var(--accent); object-fit: cover; }
-        #track-name { font-size: 13px; font-weight: 900; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-grow: 1; color: #eee; }
+        #track-art { width: 45px; height: 45px; border-radius: 6px; border: 1px solid var(--accent); object-fit: cover; background-color: #111; }
+        #track-name { font-size: 13px; font-weight: 900; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-grow: 1; color: #fff; text-transform: uppercase; }
 
         /* Control-Zeile */
-        .controls-main { display: flex; align-items: center; justify-content: space-between; width: 100%; }
+        .controls-main { display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 0 10px; box-sizing: border-box; }
         
-        .play-btn { width: 50px; height: 50px; border-radius: 50%; background: #fff; color: #000; border: none; font-size: 20px; display: flex; align-items: center; justify-content: center; }
-        .nav-btn { background: none; border: none; color: #999; font-weight: 900; font-size: 10px; padding: 10px; }
+        .play-btn { width: 50px; height: 50px; border-radius: 50%; background: #fff; color: #000; border: none; font-size: 20px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 0 15px rgba(255,255,255,0.15); }
+        .play-btn:active { transform: scale(0.96); }
+        .nav-btn { background: none; border: none; color: #aaa; font-weight: 900; font-size: 10px; padding: 10px; cursor: pointer; text-transform: uppercase; }
+        .nav-btn:active { color: #fff; }
 
         /* Volume & Loop Gruppe */
-        .utility-row { display: flex; align-items: center; justify-content: center; gap: 20px; width: 100%; }
+        .utility-row { display: flex; align-items: center; justify-content: center; gap: 15px; width: 100%; }
         
-        .vol-container { display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.05); padding: 5px 12px; border-radius: 20px; border: 1px solid var(--border); }
-        .vol-slider { width: 80px; accent-color: var(--accent); height: 4px; cursor: pointer; }
-        #v-val { font-size: 12px; font-weight: 900; color: var(--accent); min-width: 20px; }
+        .vol-container { display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.03); padding: 6px 12px; border-radius: 20px; border: 1px solid var(--border); }
+        .vol-slider { width: 85px; accent-color: var(--accent); height: 4px; cursor: pointer; outline: none; }
+        #v-val { font-size: 12px; font-weight: 900; color: var(--accent); min-width: 22px; text-align: right; }
 
-        .loop-btn { background: none; border: 1px solid #444; color: #888; padding: 5px 12px; border-radius: 15px; font-size: 9px; font-weight: 800; text-transform: uppercase; }
-        .loop-btn.active { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 10px rgba(255,0,51,0.3); }
+        .loop-btn { background: none; border: 1px solid #444; color: #888; padding: 6px 14px; border-radius: 15px; font-size: 9px; font-weight: 800; text-transform: uppercase; cursor: pointer; }
+        .loop-btn.active { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 10px rgba(255,0,51,0.2); }
 
         /* Progress Bar Ganz unten im HUD */
-        #scrub { width: 100%; accent-color: var(--accent); height: 4px; border-radius: 2px; margin-top: 5px; }
+        #scrub { width: 100%; accent-color: var(--accent); height: 4px; border-radius: 2px; margin-top: 5px; cursor: pointer; outline: none; }
 
         /* Desktop Layout (Bleibt erhalten) */
         @media (min-width: 768px) {
-            footer { bottom: 0; left: 0; right: 0; border-radius: 0; height: 110px; padding: 0 40px; display: grid; grid-template-columns: 300px 1fr 300px; align-items: center; }
-            .track-row { border: none; padding: 0; }
-            .grid { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); bottom: 130px; }
+            footer { bottom: 0; left: 0; right: 0; border-radius: 0; height: 110px; padding: 0 40px; display: grid; grid-template-columns: 300px 1fr 300px; align-items: center; border-left: none; border-right: none; border-bottom: none; }
+            .track-row { border: none; padding: 0; justify-content: flex-start; }
+            #track-name { text-align: left; }
+            .grid { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); bottom: 130px; padding: 0 30px; }
             .utility-row { justify-content: flex-end; }
+            .controls-main { justify-content: center; gap: 30px; }
         }
     </style>
 </head>
@@ -121,8 +134,8 @@
 
     <header>
         <div class="search-container">
-            <input type="text" class="search-bar" id="searchInp" placeholder="SONG / URL..." onkeydown="if(event.key==='Enter') startProcess(this.value)">
-            <button class="add-btn" onclick="startProcess(document.getElementById('searchInp').value)">ADD</button>
+            <input type="text" class="search-bar" id="searchInp" placeholder="SONG NAME ODER URL..." onkeydown="if(event.key==='Enter') startProcess(this.value)">
+            <button class="add-btn" onclick="startProcess(document.getElementById('searchInp').value)">Add</button>
         </div>
     </header>
 
@@ -131,13 +144,13 @@
     <footer>
         <div class="track-row">
             <img id="track-art" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7">
-            <div id="track-name">BEREIT FÜR SOUND</div>
+            <div id="track-name">Aether Stream</div>
         </div>
 
         <div class="controls-main">
-            <button class="nav-btn" onclick="yt.previousVideo()">PREV</button>
+            <button class="nav-btn" onclick="yt.previousVideo()">Prev</button>
             <button class="play-btn" id="m-play" onclick="togglePlay()">▶</button>
-            <button class="nav-btn" onclick="yt.nextVideo()">NEXT</button>
+            <button class="nav-btn" onclick="yt.nextVideo()">Next</button>
         </div>
 
         <div class="utility-row">
@@ -145,7 +158,7 @@
                 <span id="v-val">50</span>
                 <input type="range" class="vol-slider" oninput="changeVol(this.value)" value="50" min="0" max="100">
             </div>
-            <button class="loop-btn" id="loop-toggle" onclick="toggleLoop()">LOOP: OFF</button>
+            <button class="loop-btn" id="loop-toggle" onclick="toggleLoop()">Loop: Off</button>
         </div>
 
         <input type="range" id="scrub" value="0" step="1" oninput="manualSeek(this.value)">
@@ -157,6 +170,7 @@
     <script>
         let yt, isLooping = false, hasEngaged = false;
 
+        // BROWSER SAFETY UNLOCK
         function forceEngagement() {
             if(!hasEngaged) {
                 const vid = document.getElementById('video-bg');
@@ -173,11 +187,11 @@
                 events: { 
                     'onReady': (e) => { e.target.setVolume(50); }, 
                     'onStateChange': (e) => {
-                        if(e.data === 1) { 
+                        if(e.data === 1) { // Playing
                             document.getElementById('track-name').innerText = yt.getVideoData().title.toUpperCase();
                             document.getElementById('m-play').innerText = '⏸';
                             updateProgress();
-                        } else if (e.data === 0) { 
+                        } else if (e.data === 0) { // Ended
                             if(isLooping) { yt.playVideo(); } else { yt.nextVideo(); }
                         } else {
                             document.getElementById('m-play').innerText = '▶';
@@ -214,7 +228,7 @@
                 document.getElementById('track-art').src = d.items[0].thumbnail;
                 
                 const g = document.getElementById('grid'); g.innerHTML = '';
-                d.items.slice(0, 15).forEach(i => {
+                d.items.slice(0, 18).forEach(i => {
                     const videoId = i.url.split('v=')[1];
                     const div = document.createElement('div'); div.className = 'card';
                     div.onclick = () => { 
@@ -231,7 +245,7 @@
             isLooping = !isLooping;
             const btn = document.getElementById('loop-toggle');
             btn.classList.toggle('active', isLooping);
-            btn.innerText = isLooping ? "LOOP: ON" : "LOOP: OFF";
+            btn.innerText = isLooping ? "Loop: On" : "Loop: Off";
         }
 
         function togglePlay() { yt.getPlayerState() === 1 ? yt.pauseVideo() : yt.playVideo(); }
@@ -244,7 +258,7 @@
                     const dur = yt.getDuration();
                     if(dur > 0) {
                         document.getElementById('scrub').max = dur;
-                        document.getElementById('scrub').value = yt.getCurrentTime();
+                        document.getElementById('scrubElements').value = yt.getCurrentTime();
                     }
                 }
             }, 500);
