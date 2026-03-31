@@ -32,10 +32,7 @@ z-index:-1;
 }
 
 /* HEADER */
-header{
-padding:12px;
-}
-
+header{padding:12px;}
 .search{
 width:100%;
 padding:16px;
@@ -57,9 +54,9 @@ display:grid;
 grid-template-columns:1fr 1fr;
 gap:10px;
 overflow-y:auto;
-padding-bottom:10px;
 }
 
+/* CARD */
 .card{
 border-radius:12px;
 overflow:hidden;
@@ -73,7 +70,6 @@ object-fit:cover;
 .card-info{
 padding:8px;
 font-size:13px;
-font-weight:600;
 }
 
 /* PLAYER */
@@ -88,6 +84,7 @@ padding:12px;
 display:flex;
 flex-direction:column;
 gap:10px;
+padding-bottom:calc(12px + env(safe-area-inset-bottom));
 }
 
 /* TRACK */
@@ -112,7 +109,6 @@ text-overflow:ellipsis;
 /* SEEK */
 #seek{
 width:100%;
-height:5px;
 }
 
 /* CONTROLS */
@@ -120,7 +116,6 @@ height:5px;
 display:flex;
 justify-content:space-between;
 align-items:center;
-padding:0 10px;
 }
 .controls button{
 flex:1;
@@ -128,24 +123,15 @@ font-size:24px;
 background:none;
 border:none;
 color:white;
-padding:10px 0;
+padding:10px;
 }
-.play{
-font-size:34px;
-}
+.play{font-size:34px;}
 
-/* BOTTOM ROW */
+/* BOTTOM */
 .bottom{
 display:flex;
 align-items:center;
 justify-content:space-between;
-gap:10px;
-}
-
-/* LOOP */
-#loop{
-font-size:20px;
-opacity:.7;
 }
 
 /* VOLUME */
@@ -163,12 +149,6 @@ font-weight:bold;
 }
 #vol{
 flex:1;
-height:5px;
-}
-
-/* SAFE AREA (iPhone) */
-footer{
-padding-bottom:calc(12px + env(safe-area-inset-bottom));
 }
 </style>
 </head>
@@ -202,7 +182,7 @@ onkeydown="if(event.key==='Enter') start(this.value)">
 </div>
 
 <div class="bottom">
-<button id="loop" onclick="loop()">🔁</button>
+<button onclick="loop()">🔁</button>
 
 <div class="vol">
 <span id="v-val">20</span>
@@ -219,25 +199,27 @@ onkeydown="if(event.key==='Enter') start(this.value)">
 <script>
 let yt, loopOn=false, unlocked=false, interval, volTimer;
 
-// unlock
+// USER UNLOCK (FIXED)
 function unlock(){
-if(unlocked)return;
-video-bg.play().catch(()=>{});
-if(yt)yt.playVideo();
+if(unlocked) return;
+
+document.getElementById('video-bg').play().catch(()=>{});
 unlocked=true;
 }
 
-// yt
+// YOUTUBE READY
 function onYouTubeIframeAPIReady(){
 yt=new YT.Player('player',{
 events:{
 onReady:e=>e.target.setVolume(20),
 onStateChange:e=>{
 if(e.data==1){
-track-name.innerText=yt.getVideoData().title;
-play.innerText='⏸';
-progress();
-}else play.innerText='▶';
+document.getElementById('track-name').innerText=yt.getVideoData().title;
+document.getElementById('play').innerText='⏸';
+startProgress();
+}else{
+document.getElementById('play').innerText='▶';
+}
 if(e.data==0){
 loopOn?yt.playVideo():yt.nextVideo();
 }
@@ -246,68 +228,105 @@ loopOn?yt.playVideo():yt.nextVideo();
 });
 }
 
-// progress
-function progress(){
+// PROGRESS
+function startProgress(){
 clearInterval(interval);
 interval=setInterval(()=>{
-if(!yt)return;
+if(!yt) return;
 seek.max=yt.getDuration();
 seek.value=yt.getCurrentTime();
 },500);
 }
 
-// start
+// START
 function start(v){
+if(!yt) return;
+
 let id=extract(v);
 if(id){
 yt.loadVideoById(id);
 thumb(id);
-}else search(v);
-search.value='';
+
+// FORCE PLAY AFTER LOAD (IMPORTANT FIX)
+setTimeout(()=>yt.playVideo(),200);
+
+}else{
+searchSongs(v);
+}
 }
 
-// id
+// EXTRACT
 function extract(u){
-let m=u.match(/(?:v=|youtu\.be\/)([^&]+)/);
+let m=u.match(/(?:v=|youtu.be\/)([^&]+)/);
 return m?m[1]:null;
 }
 
-// thumb
+// THUMB
 function thumb(id){
-track-art.src=`https://img.youtube.com/vi/${id}/mqdefault.jpg`;
+document.getElementById('track-art').src=
+`https://img.youtube.com/vi/${id}/mqdefault.jpg`;
 }
 
-// search
-async function search(q){
+// SEARCH
+async function searchSongs(q){
 try{
 let r=await fetch(`https://pipedapi.kavin.rocks/search?q=${q}`);
 let d=await r.json();
+
 grid.innerHTML='';
 d.items.slice(0,10).forEach(i=>{
 let id=extract(i.url);
-if(!id)return;
+if(!id) return;
+
 let c=document.createElement('div');
 c.className='card';
-c.onclick=()=>{yt.loadVideoById(id);thumb(id);}
-c.innerHTML=`<img src="${i.thumbnail}"><div class="card-info">${i.title}</div>`;
+c.onclick=()=>{
+yt.loadVideoById(id);
+thumb(id);
+setTimeout(()=>yt.playVideo(),200);
+};
+
+c.innerHTML=`<img src="${i.thumbnail}">
+<div class="card-info">${i.title}</div>`;
+
 grid.appendChild(c);
 });
 }catch{}
 }
 
-// controls
-function toggle(){yt.getPlayerState()==1?yt.pauseVideo():yt.playVideo();}
+// PLAY BUTTON (FIXED)
+function toggle(){
+if(!yt) return;
+
+let state=yt.getPlayerState();
+
+if(state===1){
+yt.pauseVideo();
+}else{
+yt.playVideo();
+
+// retry for mobile
+setTimeout(()=>{
+if(yt.getPlayerState()!==1){
+yt.playVideo();
+}
+},300);
+}
+}
+
+// CONTROLS
 function next(){yt.nextVideo();}
 function prev(){yt.previousVideo();}
 function loop(){loopOn=!loopOn;}
 
-// seek
+// SEEK
 seek.oninput=()=>yt.seekTo(seek.value,true);
 
-// volume FIXED
+// VOLUME (SMOOTH)
 vol.oninput=()=>{
 let v=vol.value;
 v-val.innerText=v;
+
 clearTimeout(volTimer);
 volTimer=setTimeout(()=>yt.setVolume(v),80);
 };
