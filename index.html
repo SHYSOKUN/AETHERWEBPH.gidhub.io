@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Aether Mobile Fix</title>
+<title>Aether Mobile Fixed Player</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
 <style>
 :root { --accent:#ff0033; }
@@ -51,7 +51,7 @@ footer{position:fixed;bottom:0;left:0;right:0;background:rgba(0,0,0,.9);backdrop
 <input id="seek" type="range" value="0">
 <div class="controls">
 <button onclick="prev()">⏮</button>
-<button class="play" id="play" onclick="toggle()">▶</button>
+<button class="play" id="play">▶</button>
 <button onclick="next()">⏭</button>
 </div>
 <div class="bottom">
@@ -67,53 +67,49 @@ footer{position:fixed;bottom:0;left:0;right:0;background:rgba(0,0,0,.9);backdrop
 
 <script src="https://www.youtube.com/iframe_api"></script>
 <script>
-let yt, ytReady=false, loopOn=false, interval, volTimer;
+let yt, ytReady=false, loopOn=false, interval;
 
-// Unlock mobile interaction
-document.body.addEventListener('click',()=>{document.getElementById('video-bg').play().catch(()=>{});});
-
-// YouTube API Ready
-function onYouTubeIframeAPIReady(){
-yt=new YT.Player('player',{
-height:'0',width:'0',
-events:{
-'onReady':()=>{ytReady=true; yt.setVolume(20);},
-'onStateChange':onStateChange
-}});
-}
-
-// State change
-function onStateChange(e){
-if(e.data==1){document.getElementById('track-name').innerText=yt.getVideoData().title;document.getElementById('play').innerText='⏸';startProgress();}
-else{document.getElementById('play').innerText='▶';}
-if(e.data==0){loopOn?yt.playVideo():yt.nextVideo();}
-}
-
-// Progress bar
-function startProgress(){clearInterval(interval);interval=setInterval(()=>{if(!ytReady) return; seek.max=yt.getDuration(); seek.value=yt.getCurrentTime();},500);}
-
-// Extract YouTube ID
+// Utility: extract YouTube ID
 function extract(url){let m=url.match(/(?:v=|youtu\.be\/)([^&]+)/);return m?m[1]:null;}
 
-// Play / Pause
-function toggle(){if(!ytReady)return; yt.getPlayerState()==1?yt.pauseVideo():yt.playVideo();}
+// Thumb
+function thumb(id){document.getElementById('track-art').src=`https://img.youtube.com/vi/${id}/mqdefault.jpg`;}
+
+// Update progress
+function startProgress(){
+clearInterval(interval);
+interval=setInterval(()=>{
+if(!ytReady) return;
+seek.max=yt.getDuration();
+seek.value=yt.getCurrentTime();
+},500);
+}
+
+// Toggle Play/Pause
+function toggle(){
+if(!ytReady) return;
+yt.getPlayerState()===1 ? yt.pauseVideo() : yt.playVideo();
+}
 
 // Next / Prev / Loop
-function next(){if(!ytReady)return; yt.nextVideo();}
-function prev(){if(!ytReady)return; yt.previousVideo();}
+function next(){if(!ytReady) return; yt.nextVideo();}
+function prev(){if(!ytReady) return; yt.previousVideo();}
 function loop(){loopOn=!loopOn;}
 
-// Seek
+// Seek bar
 seek.oninput=()=>{if(ytReady) yt.seekTo(seek.value,true);}
 
 // Volume
 vol.oninput=()=>{
-let v=vol.value; v-val.innerText=v; clearTimeout(volTimer); volTimer=setTimeout(()=>{if(ytReady) yt.setVolume(v);},80);
+let v=vol.value;
+v-val.innerText=v;
+if(!ytReady) return;
+yt.setVolume(v);
 };
 vol.onchange=()=>{if(ytReady) yt.setVolume(vol.value);}
 
-// Add Song Button
-document.getElementById('addBtn').onclick=function(){
+// Add Button
+document.getElementById('addBtn').onclick = function(){
 let url=document.getElementById('search').value.trim();
 let id=extract(url);
 if(!id){alert("Ungültige URL"); return;}
@@ -132,9 +128,26 @@ c.innerHTML=`<img src="https://img.youtube.com/vi/${id}/mqdefault.jpg"><div clas
 grid.prepend(c);
 }
 
-// Update thumb
-function thumb(id){document.getElementById('track-art').src=`https://img.youtube.com/vi/${id}/mqdefault.jpg`;}
-</script>
+// YouTube IFrame API
+function onYouTubeIframeAPIReady(){
+yt = new YT.Player('player',{
+height:'0',width:'0',
+playerVars:{'autoplay':0,'controls':0,'rel':0,'modestbranding':1},
+events:{
+'onReady':()=>{
+ytReady=true; yt.setVolume(20);
+},
+'onStateChange':(e)=>{
+if(e.data==1){document.getElementById('track-name').innerText=yt.getVideoData().title; document.getElementById('play').innerText='⏸'; startProgress();}
+else{document.getElementById('play').innerText='▶';}
+if(e.data==0){loopOn?yt.playVideo():yt.nextVideo();}
+}
+}
+});
+}
 
+// Unlock video for mobile autoplay
+document.body.addEventListener('click',()=>{document.getElementById('video-bg').play().catch(()=>{});});
+</script>
 </body>
 </html>
