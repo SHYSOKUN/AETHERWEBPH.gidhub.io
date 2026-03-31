@@ -3,135 +3,44 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Aether Player Fix</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
-<style>
-body{margin:0;font-family:'Inter',sans-serif;background:black;color:white;overflow:hidden;}
-header{display:flex;padding:10px;gap:8px;}
-.search{flex:1;padding:14px;border-radius:12px;border:none;background:rgba(0,0,0,.6);color:white;}
-#addBtn{padding:14px 16px;border:none;border-radius:12px;background:#ff0033;color:white;font-weight:bold;cursor:pointer;}
-.grid{position:absolute;top:70px;bottom:170px;left:10px;right:10px;display:grid;grid-template-columns:1fr 1fr;gap:10px;overflow-y:auto;}
-.card{border-radius:12px;overflow:hidden;background:rgba(0,0,0,.5);}
-.card img{width:100%;aspect-ratio:16/9;object-fit:cover;}
-.card-info{padding:8px;font-size:13px;}
-footer{position:fixed;bottom:0;left:0;right:0;background:rgba(0,0,0,.9);padding:12px;display:flex;flex-direction:column;gap:10px;}
-.track{display:flex;align-items:center;gap:10px;}
-#track-art{width:50px;height:50px;border-radius:8px;}
-#track-name{font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-#seek{width:100%;}
-.controls{display:flex;justify-content:space-between;align-items:center;}
-.controls button{flex:1;font-size:24px;background:none;border:none;color:white;padding:10px;}
-.play{font-size:34px;}
-.bottom{display:flex;align-items:center;justify-content:space-between;gap:10px;}
-.vol{display:flex;align-items:center;gap:8px;flex:1;}
-#v-val{width:35px;text-align:right;color:#ff0033;font-weight:bold;}
-#vol{flex:1;}
-</style>
+<title>YouTube Player Fix</title>
 </head>
-<body>
+<body style="margin:0;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;background:black;color:white;">
 
-<header>
-<input class="search" id="search" placeholder="YouTube URL">
-<button id="addBtn">+ ADD</button>
-</header>
-
-<div class="grid" id="grid"></div>
-
-<footer>
-<div class="track">
-<img id="track-art">
-<div id="track-name">Aether</div>
-</div>
-
-<input id="seek" type="range" value="0">
-
-<div class="controls">
-<button onclick="prev()">⏮</button>
-<button class="play" id="play">▶</button>
-<button onclick="next()">⏭</button>
-</div>
-
-<div class="bottom">
-<button onclick="loop()">🔁</button>
-<div class="vol">
-<span id="v-val">20</span>
-<input id="vol" type="range" min="0" max="100" value="20">
-</div>
-</div>
-</footer>
+<input id="url" placeholder="YouTube URL" style="width:80%;padding:10px;font-size:16px;margin-bottom:10px;">
+<button id="playBtn" style="padding:10px 20px;font-size:16px;margin-bottom:20px;">Play</button>
 
 <div id="player"></div>
 
 <script src="https://www.youtube.com/iframe_api"></script>
 <script>
-let yt, ready=false, loopOn=false, interval;
+let yt;
 
-// Helper: extract YouTube ID
-function extract(url){let m=url.match(/(?:v=|youtu\.be\/)([^&]+)/);return m?m[1]:null;}
-function thumb(id){document.getElementById('track-art').src=`https://img.youtube.com/vi/${id}/mqdefault.jpg`;}
-
-// Progress bar
-function startProgress(){
-clearInterval(interval);
-interval=setInterval(()=>{
-if(!ready) return;
-seek.max=yt.getDuration();
-seek.value=yt.getCurrentTime();
-},500);
+// YouTube ID extrahieren
+function extract(url){
+    let m = url.match(/(?:v=|youtu\.be\/)([^&]+)/);
+    return m ? m[1] : null;
 }
 
-// Toggle play/pause
-function toggle(){if(!ready)return; yt.getPlayerState()==1?yt.pauseVideo():yt.playVideo();}
+// Play Button
+document.getElementById('playBtn').onclick = function(){
+    let videoId = extract(document.getElementById('url').value.trim());
+    if(!videoId){ alert("Ungültige YouTube URL"); return; }
 
-// Controls
-function next(){if(!ready)return; yt.nextVideo();}
-function prev(){if(!ready)return; yt.previousVideo();}
-function loop(){loopOn=!loopOn;}
-
-// Seek
-seek.oninput=()=>{if(ready) yt.seekTo(seek.value,true);}
-
-// Volume
-vol.oninput=()=>{
-let v=vol.value;
-v-val.innerText=v;
-if(!ready) return;
-yt.setVolume(v);
-};
-vol.onchange=()=>{if(ready) yt.setVolume(vol.value);}
-
-// Add song button
-document.getElementById('addBtn').onclick = function(){
-let url=document.getElementById('search').value.trim();
-let id=extract(url);
-if(!id){alert("Ungültige URL"); return;}
-document.getElementById('search').value='';
-
-if(!yt){
-yt=new YT.Player('player',{
-height:'0',width:'0',
-playerVars:{autoplay:1,controls:0,rel:0,modestbranding:1},
-events:{
-'onReady':()=>{ready=true; yt.loadVideoById(id); thumb(id); startProgress();},
-'onStateChange':(e)=>{
-if(e.data==1){document.getElementById('track-name').innerText=yt.getVideoData().title; document.getElementById('play').innerText='⏸'; startProgress();}
-else{document.getElementById('play').innerText='▶';}
-if(e.data==0){loopOn?yt.playVideo():yt.nextVideo();}
-}
-}
-});
-} else {
-yt.loadVideoById(id);
-thumb(id);
-yt.playVideo();
-}
-
-// Add to grid
-let c=document.createElement('div');
-c.className='card';
-c.onclick=()=>{yt.loadVideoById(id); thumb(id); yt.playVideo();};
-c.innerHTML=`<img src="https://img.youtube.com/vi/${id}/mqdefault.jpg"><div class="card-info">${url}</div>`;
-grid.prepend(c);
+    if(!yt){
+        yt = new YT.Player('player', {
+            height: '360',
+            width: '640',
+            videoId: videoId,
+            playerVars: { autoplay: 1, controls: 1 },
+            events: {
+                'onReady': e => e.target.playVideo()
+            }
+        });
+    } else {
+        yt.loadVideoById(videoId);
+        yt.playVideo();
+    }
 };
 </script>
 </body>
