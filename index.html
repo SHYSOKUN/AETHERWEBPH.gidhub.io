@@ -1,47 +1,229 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>YouTube Player Fix</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Aether WEBPLAYER</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    
+    <style>
+        :root { 
+            --accent: #ff0033; 
+            --ui-bg: rgba(0, 0, 0, 0.75); 
+        }
+        
+        body, html { 
+            margin: 0; padding: 0; height: 100vh; width: 100vw;
+            font-family: 'Inter', sans-serif; color: white;
+            overflow: hidden; background-color: #000; 
+        }
+
+        #video-container {
+            position: fixed; inset: 0; width: 100vw; height: 100vh;
+            z-index: -2; overflow: hidden; display: flex; align-items: center; justify-content: center;
+        }
+
+        #video-bg {
+            min-width: 100%; min-height: 100%; width: auto; height: auto;
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            object-fit: cover;
+            filter: brightness(0.4);
+        }
+
+        header { 
+            height: 80px; display: flex; align-items: center; justify-content: center;
+            padding: 0 20px; background: linear-gradient(to bottom, rgba(0,0,0,0.9), transparent);
+            z-index: 100; position: relative;
+        }
+
+        .search-bar {
+            width: 100%; max-width: 650px; background: rgba(0, 0, 0, 0.6); border: 1px solid rgba(255,255,255,0.2);
+            padding: 14px 18px; color: white; font-size: 16px; border-radius: 12px; outline: none;
+            backdrop-filter: blur(15px); transition: 0.3s;
+        }
+        .search-bar:focus { border-color: var(--accent); background: rgba(0,0,0,0.9); }
+
+        .grid { 
+            position: absolute; top: 90px; bottom: 160px; left: 0; right: 0;
+            padding: 0 20px; display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); 
+            gap: 15px; overflow-y: auto; scrollbar-width: none;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        .card { cursor: pointer; border-radius: 10px; overflow: hidden; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1); transition: 0.2s; backdrop-filter: blur(5px); }
+        .card:active { transform: scale(0.98); }
+        .card img { width: 100%; aspect-ratio: 16/9; object-fit: cover; }
+        .card-info { padding: 10px; font-size: 13px; font-weight: 700; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+        footer {
+            position: fixed; bottom: 0; width: 100%; height: auto; min-height: 140px;
+            background: var(--ui-bg); border-top: 2px solid var(--accent);
+            display: grid; grid-template-columns: 1fr;
+            align-items: center; padding: 15px 20px; box-sizing: border-box; backdrop-filter: blur(30px);
+            z-index: 200;
+        }
+
+        /* Desktop Layout Override */
+        @media (min-width: 768px) {
+            footer { grid-template-columns: 300px 1fr 300px; height: 115px; }
+            .grid { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); bottom: 130px; }
+            .vol-cell { display: flex; }
+        }
+
+        .track-cell { display: flex; align-items: center; gap: 12px; margin-bottom: 15px; justify-content: center; }
+        @media (min-width: 768px) { .track-cell { margin-bottom: 0; justify-content: flex-start; } }
+
+        #track-art { width: 50px; height: 50px; border-radius: 6px; border: 1px solid var(--accent); object-fit: cover; }
+        #track-name { font-size: 16px; font-weight: 900; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
+
+        .player-cell { display: flex; flex-direction: column; align-items: center; gap: 12px; width: 100%; }
+        .play-btn { width: 55px; height: 55px; border-radius: 50%; background: #fff; color: #000; border: none; cursor: pointer; font-size: 22px; }
+        
+        .loop-btn { background: none; border: 1px solid #444; color: #888; padding: 6px 12px; border-radius: 20px; cursor: pointer; font-weight: 800; font-size: 10px; }
+        .loop-btn.active { border-color: var(--accent); color: var(--accent); }
+
+        #scrub { width: 100%; max-width: 500px; accent-color: var(--accent); cursor: pointer; height: 20px; }
+
+        .vol-cell { display: none; justify-content: flex-end; align-items: center; gap: 15px; }
+        #v-val { font-weight: 900; color: var(--accent); font-size: 20px; width: 35px; text-align: right; }
+    </style>
 </head>
-<body style="margin:0;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;background:black;color:white;">
+<body onclick="forceEngagement()">
 
-<input id="url" placeholder="YouTube URL" style="width:80%;padding:10px;font-size:16px;margin-bottom:10px;">
-<button id="playBtn" style="padding:10px 20px;font-size:16px;margin-bottom:20px;">Play</button>
+    <div id="video-container">
+        <video autoplay muted loop playsinline id="video-bg">
+            <source src="Akatsuki.mp4" type="video/mp4">
+        </video>
+    </div>
 
-<div id="player"></div>
+    <header>
+        <input type="text" class="search-bar" id="searchInp" placeholder="Song suchen..." onkeydown="if(event.key==='Enter') startProcess(this.value)">
+    </header>
 
-<script src="https://www.youtube.com/iframe_api"></script>
-<script>
-let yt;
+    <div class="grid" id="grid"></div>
 
-// YouTube ID extrahieren
-function extract(url){
-    let m = url.match(/(?:v=|youtu\.be\/)([^&]+)/);
-    return m ? m[1] : null;
-}
+    <footer>
+        <div class="track-cell">
+            <img id="track-art" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7">
+            <div id="track-name">WÄHLE EINEN SONG</div>
+        </div>
 
-// Play Button
-document.getElementById('playBtn').onclick = function(){
-    let videoId = extract(document.getElementById('url').value.trim());
-    if(!videoId){ alert("Ungültige YouTube URL"); return; }
+        <div class="player-cell">
+            <div style="display:flex; gap:30px; align-items:center;">
+                <button onclick="yt.previousVideo()" style="background:none; border:none; color:#999; cursor:pointer; font-weight:900; font-size:12px;">PREV</button>
+                <button class="play-btn" id="m-play" onclick="togglePlay()">▶</button>
+                <button onclick="yt.nextVideo()" style="background:none; border:none; color:#999; cursor:pointer; font-weight:900; font-size:12px;">NEXT</button>
+            </div>
+            <input type="range" id="scrub" value="0" step="1" oninput="manualSeek(this.value)">
+            <button class="loop-btn" id="loop-toggle" onclick="toggleLoop()">LOOP: OFF</button>
+        </div>
 
-    if(!yt){
-        yt = new YT.Player('player', {
-            height: '360',
-            width: '640',
-            videoId: videoId,
-            playerVars: { autoplay: 1, controls: 1 },
-            events: {
-                'onReady': e => e.target.playVideo()
+        <div class="vol-cell">
+            <span id="v-val">50</span>
+            <input type="range" oninput="changeVol(this.value)" value="50" min="0" max="100" style="accent-color:var(--accent); width: 80px;">
+        </div>
+    </footer>
+
+    <div id="player" style="position:absolute; top:-1000px;"></div>
+
+    <script src="https://www.youtube.com/iframe_api"></script>
+    <script>
+        let yt, isLooping = false, hasEngaged = false;
+
+        function forceEngagement() {
+            if(!hasEngaged) {
+                const vid = document.getElementById('video-bg');
+                vid.play().catch(e => console.log("Video wait..."));
+                if(yt && yt.playVideo) yt.playVideo();
+                hasEngaged = true;
             }
-        });
-    } else {
-        yt.loadVideoById(videoId);
-        yt.playVideo();
-    }
-};
-</script>
+        }
+
+        function onYouTubeIframeAPIReady() {
+            yt = new YT.Player('player', {
+                height: '0', width: '0',
+                playerVars: { 'autoplay': 1, 'controls': 0, 'enablejsapi': 1, 'rel': 0, 'origin': window.location.origin },
+                events: { 
+                    'onReady': (e) => { e.target.setVolume(50); }, 
+                    'onStateChange': (e) => {
+                        if(e.data === 1) { 
+                            document.getElementById('track-name').innerText = yt.getVideoData().title.toUpperCase();
+                            document.getElementById('m-play').innerText = '⏸';
+                            updateProgress();
+                        } else if (e.data === 0) { 
+                            if(isLooping) { yt.playVideo(); } else { yt.nextVideo(); }
+                        } else {
+                            document.getElementById('m-play').innerText = '▶';
+                        }
+                    }
+                }
+            });
+        }
+
+        function startProcess(val) {
+            if(!val) return;
+            const id = extractId(val);
+            if(id) {
+                yt.loadVideoById(id);
+                document.getElementById('track-art').src = `https://img.youtube.com/vi/${id}/mqdefault.jpg`;
+            } else {
+                runSearch(val);
+            }
+            document.getElementById('searchInp').value = '';
+        }
+
+        function extractId(url) {
+            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+            const match = url.match(regExp);
+            return (match && match[2].length === 11) ? match[2] : null;
+        }
+
+        async function runSearch(q) {
+            const r = await fetch(`https://pipedapi.kavin.rocks/search?q=${encodeURIComponent(q)}&filter=music_songs`);
+            const d = await r.json();
+            if(d.items && d.items.length > 0) {
+                const firstId = d.items[0].url.split('v=')[1];
+                yt.loadVideoById(firstId);
+                document.getElementById('track-art').src = d.items[0].thumbnail;
+                
+                const g = document.getElementById('grid'); g.innerHTML = '';
+                d.items.slice(0, 15).forEach(i => {
+                    const videoId = i.url.split('v=')[1];
+                    const div = document.createElement('div'); div.className = 'card';
+                    div.onclick = () => { 
+                        yt.loadVideoById(videoId); 
+                        document.getElementById('track-art').src = i.thumbnail; 
+                    };
+                    div.innerHTML = `<img src="${i.thumbnail}"><div class="card-info">${i.title}</div>`;
+                    g.appendChild(div);
+                });
+            }
+        }
+
+        function toggleLoop() {
+            isLooping = !isLooping;
+            const btn = document.getElementById('loop-toggle');
+            btn.classList.toggle('active', isLooping);
+            btn.innerText = isLooping ? "LOOP: ON" : "LOOP: OFF";
+        }
+
+        function togglePlay() { yt.getPlayerState() === 1 ? yt.pauseVideo() : yt.playVideo(); }
+        function changeVol(v) { yt.setVolume(v); document.getElementById('v-val').innerText = v; }
+        function manualSeek(v) { yt.seekTo(v); }
+        
+        function updateProgress() {
+            setInterval(() => {
+                if(yt && yt.getCurrentTime) {
+                    const dur = yt.getDuration();
+                    if(dur > 0) {
+                        document.getElementById('scrub').max = dur;
+                        document.getElementById('scrub').value = yt.getCurrentTime();
+                    }
+                }
+            }, 500);
+        }
+    </script>
 </body>
 </html>
