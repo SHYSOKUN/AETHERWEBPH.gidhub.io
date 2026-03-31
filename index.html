@@ -1,3 +1,13 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aether WebPlayer</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+
+<style>
 :root { 
     --accent: #ff0033; 
     --ui-bg: rgba(0, 0, 0, 0.7); 
@@ -12,11 +22,10 @@ body, html {
     background: transparent;
 }
 
-/* VIDEO BACKGROUND */
+/* VIDEO */
 #video-container {
     position: fixed; inset: 0;
     z-index: -2;
-    overflow: hidden;
 }
 
 #video-bg {
@@ -38,7 +47,6 @@ header {
 
 .search-bar {
     width: 100%;
-    max-width: 100%;
     padding: 14px;
     font-size: 16px;
     border-radius: 10px;
@@ -61,12 +69,10 @@ header {
     overflow-y: auto;
 }
 
-/* CARD */
 .card {
     border-radius: 10px;
     overflow: hidden;
     background: rgba(0,0,0,0.5);
-    backdrop-filter: blur(5px);
 }
 
 .card img {
@@ -81,7 +87,7 @@ header {
     font-weight: 700;
 }
 
-/* FOOTER PLAYER */
+/* FOOTER */
 footer {
     position: fixed;
     bottom: 0;
@@ -92,10 +98,9 @@ footer {
     display: flex;
     flex-direction: column;
     padding: 10px;
-    backdrop-filter: blur(20px);
 }
 
-/* TRACK INFO */
+/* TRACK */
 .track-cell {
     display: flex;
     align-items: center;
@@ -112,48 +117,217 @@ footer {
 }
 
 /* CONTROLS */
-.player-cell {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-}
-
-/* BUTTON ROW */
 .controls {
     display: flex;
     justify-content: center;
     align-items: center;
     gap: 20px;
-    width: 100%;
+    margin-top: 5px;
 }
 
 .play-btn {
     width: 55px;
     height: 55px;
     font-size: 22px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
 }
 
-/* LOOP BUTTON */
 .loop-btn {
     font-size: 10px;
-    padding: 4px 10px;
 }
 
-/* SEEK BAR */
+/* SLIDER */
 #scrub {
-    width: 95%;
+    width: 100%;
 }
 
 /* VOLUME */
 .vol-cell {
     display: flex;
-    align-items: center;
     justify-content: center;
     gap: 10px;
-    margin-top: 5px;
+    align-items: center;
+}
+</style>
+</head>
+
+<body onclick="forceEngagement()">
+
+<!-- VIDEO BACKGROUND -->
+<div id="video-container">
+    <video autoplay muted loop playsinline id="video-bg">
+        <source src="Akatsuki.mp4" type="video/mp4">
+    </video>
+</div>
+
+<!-- SEARCH -->
+<header>
+    <input type="text" class="search-bar" id="searchInp"
+    placeholder="Enter Song URL or Name..."
+    onkeydown="if(event.key==='Enter') startProcess(this.value)">
+</header>
+
+<!-- RESULTS -->
+<div class="grid" id="grid"></div>
+
+<!-- PLAYER -->
+<footer>
+
+<div class="track-cell">
+    <img id="track-art" src="">
+    <div id="track-name">Aether Stream</div>
+</div>
+
+<div class="controls">
+    <button onclick="yt.previousVideo()">⏮</button>
+    <button class="play-btn" id="m-play" onclick="togglePlay()">▶</button>
+    <button class="loop-btn" id="loop-toggle" onclick="toggleLoop()">LOOP</button>
+    <button onclick="yt.nextVideo()">⏭</button>
+</div>
+
+<input type="range" id="scrub" value="0" oninput="manualSeek(this.value)">
+
+<div class="vol-cell">
+    <span id="v-val">20</span>
+    <input type="range" min="0" max="100" value="20" oninput="changeVol(this.value)">
+</div>
+
+</footer>
+
+<div id="player" style="position:absolute; top:-9999px;"></div>
+
+<script src="https://www.youtube.com/iframe_api"></script>
+
+<script>
+let yt, isLooping = false, hasEngaged = false, progressInterval;
+
+// UNLOCK
+function forceEngagement() {
+    if (!hasEngaged) {
+        document.getElementById('video-bg').play().catch(()=>{});
+        if (yt) yt.playVideo();
+        hasEngaged = true;
+    }
 }
 
-#v-val {
-    font-size: 16px;
+// YT READY
+function onYouTubeIframeAPIReady() {
+    yt = new YT.Player('player', {
+        height: '0',
+        width: '0',
+        events: {
+            onReady: (e) => e.target.setVolume(20),
+            onStateChange: (e) => {
+                if (e.data === 1) {
+                    document.getElementById('track-name').innerText =
+                        yt.getVideoData().title;
+
+                    document.getElementById('m-play').innerText = '⏸';
+                    startProgress();
+
+                } else if (e.data === 0) {
+                    isLooping ? yt.playVideo() : yt.nextVideo();
+                } else {
+                    document.getElementById('m-play').innerText = '▶';
+                }
+            }
+        }
+    });
 }
+
+// PROGRESS
+function startProgress() {
+    clearInterval(progressInterval);
+    progressInterval = setInterval(() => {
+        if (!yt) return;
+        document.getElementById('scrub').max = yt.getDuration();
+        document.getElementById('scrub').value = yt.getCurrentTime();
+    }, 500);
+}
+
+// START
+function startProcess(val) {
+    if (!val || !yt) return;
+
+    const id = extractId(val);
+    if (id) {
+        yt.loadVideoById(id);
+        setThumb(id);
+    } else {
+        runSearch(val);
+    }
+
+    document.getElementById('searchInp').value = '';
+}
+
+// ID
+function extractId(url) {
+    const match = url.match(/(?:v=|youtu\.be\/)([^&]+)/);
+    return match ? match[1] : null;
+}
+
+// THUMB
+function setThumb(id) {
+    document.getElementById('track-art').src =
+        `https://img.youtube.com/vi/${id}/mqdefault.jpg`;
+}
+
+// SEARCH
+async function runSearch(q) {
+    try {
+        const r = await fetch(`https://pipedapi.kavin.rocks/search?q=${q}`);
+        const d = await r.json();
+
+        const g = document.getElementById('grid');
+        g.innerHTML = '';
+
+        d.items.slice(0,10).forEach(i => {
+            const id = extractId(i.url);
+            if (!id) return;
+
+            const div = document.createElement('div');
+            div.className = 'card';
+
+            div.onclick = () => {
+                yt.loadVideoById(id);
+                setThumb(id);
+            };
+
+            div.innerHTML = `
+                <img src="${i.thumbnail}">
+                <div class="card-info">${i.title}</div>
+            `;
+
+            g.appendChild(div);
+        });
+
+    } catch(e) {
+        console.log("Search failed");
+    }
+}
+
+// CONTROLS
+function togglePlay() {
+    yt.getPlayerState() === 1 ? yt.pauseVideo() : yt.playVideo();
+}
+
+function toggleLoop() {
+    isLooping = !isLooping;
+    document.getElementById('loop-toggle').innerText =
+        isLooping ? "LOOP ON" : "LOOP";
+}
+
+function changeVol(v) {
+    yt.setVolume(v);
+    document.getElementById('v-val').innerText = v;
+}
+
+function manualSeek(v) {
+    yt.seekTo(v, true);
+}
+</script>
+
+</body>
+</html>
