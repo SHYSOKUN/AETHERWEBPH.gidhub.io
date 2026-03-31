@@ -2,331 +2,289 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Aether WebPlayer</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Aether Mobile Player</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
 
 <style>
 :root { 
     --accent: #ff0033; 
-    --ui-bg: rgba(0, 0, 0, 0.7); 
+    --ui-bg: rgba(0, 0, 0, 0.75); 
+}
+
+* {
+    -webkit-tap-highlight-color: transparent;
 }
 
 body, html { 
     margin: 0; padding: 0;
-    height: 100vh; width: 100vw;
+    height: 100%;
     font-family: 'Inter', sans-serif;
     color: white;
     overflow: hidden;
-    background: transparent;
 }
 
 /* VIDEO */
-#video-container {
-    position: fixed; inset: 0;
-    z-index: -2;
-}
-
 #video-bg {
+    position: fixed;
+    inset: 0;
     width: 100%;
     height: 100%;
     object-fit: cover;
     filter: brightness(0.5);
+    z-index: -1;
 }
 
 /* HEADER */
-header { 
-    height: 70px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0 15px;
-    background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent);
+header {
+    padding: 10px;
 }
 
 .search-bar {
     width: 100%;
     padding: 14px;
+    border-radius: 12px;
+    border: none;
     font-size: 16px;
-    border-radius: 10px;
     background: rgba(0,0,0,0.6);
-    border: 1px solid rgba(255,255,255,0.2);
     color: white;
-    outline: none;
 }
 
 /* GRID */
-.grid { 
+.grid {
     position: absolute;
-    top: 80px;
-    bottom: 140px;
+    top: 70px;
+    bottom: 150px;
     left: 10px;
     right: 10px;
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
+    gap: 10px;
     overflow-y: auto;
 }
 
 .card {
+    background: rgba(0,0,0,0.5);
     border-radius: 10px;
     overflow: hidden;
-    background: rgba(0,0,0,0.5);
 }
 
 .card img {
     width: 100%;
-    aspect-ratio: 16/9;
-    object-fit: cover;
 }
 
 .card-info {
-    padding: 8px;
-    font-size: 13px;
-    font-weight: 700;
+    padding: 6px;
+    font-size: 12px;
 }
 
-/* FOOTER */
+/* PLAYER */
 footer {
     position: fixed;
     bottom: 0;
     width: 100%;
-    height: 130px;
     background: var(--ui-bg);
-    border-top: 2px solid var(--accent);
-    display: flex;
-    flex-direction: column;
     padding: 10px;
 }
 
 /* TRACK */
-.track-cell {
+.track {
     display: flex;
     align-items: center;
     gap: 10px;
 }
 
 #track-art {
-    width: 50px;
-    height: 50px;
+    width: 45px;
+    height: 45px;
 }
 
 #track-name {
-    font-size: 14px;
+    font-size: 13px;
 }
 
 /* CONTROLS */
 .controls {
     display: flex;
     justify-content: center;
-    align-items: center;
     gap: 20px;
-    margin-top: 5px;
+    margin: 8px 0;
 }
 
-.play-btn {
-    width: 55px;
-    height: 55px;
-    font-size: 22px;
-    border-radius: 50%;
+button {
+    background: none;
     border: none;
-    cursor: pointer;
+    color: white;
+    font-size: 20px;
 }
 
-.loop-btn {
-    font-size: 10px;
+.play {
+    font-size: 26px;
 }
 
-/* SLIDER */
-#scrub {
+/* SLIDERS */
+input[type=range] {
     width: 100%;
 }
 
 /* VOLUME */
-.vol-cell {
+.vol {
     display: flex;
-    justify-content: center;
-    gap: 10px;
     align-items: center;
+    gap: 10px;
+}
+
+#v-val {
+    width: 35px;
+    text-align: right;
+    color: var(--accent);
+    font-weight: bold;
 }
 </style>
 </head>
 
-<body onclick="forceEngagement()">
+<body onclick="unlock()">
 
-<!-- VIDEO BACKGROUND -->
-<div id="video-container">
-    <video autoplay muted loop playsinline id="video-bg">
-        <source src="Akatsuki.mp4" type="video/mp4">
-    </video>
-</div>
+<video autoplay muted loop playsinline id="video-bg">
+<source src="Akatsuki.mp4" type="video/mp4">
+</video>
 
-<!-- SEARCH -->
 <header>
-    <input type="text" class="search-bar" id="searchInp"
-    placeholder="Enter Song URL or Name..."
-    onkeydown="if(event.key==='Enter') startProcess(this.value)">
+<input class="search-bar" id="search" placeholder="Search or paste URL"
+onkeydown="if(event.key==='Enter') start(this.value)">
 </header>
 
-<!-- RESULTS -->
 <div class="grid" id="grid"></div>
 
-<!-- PLAYER -->
 <footer>
 
-<div class="track-cell">
-    <img id="track-art" src="">
-    <div id="track-name">Aether Stream</div>
+<div class="track">
+<img id="track-art">
+<div id="track-name">Aether</div>
 </div>
 
 <div class="controls">
-    <button onclick="yt.previousVideo()">⏮</button>
-    <button class="play-btn" id="m-play" onclick="togglePlay()">▶</button>
-    <button class="loop-btn" id="loop-toggle" onclick="toggleLoop()">LOOP</button>
-    <button onclick="yt.nextVideo()">⏭</button>
+<button onclick="prev()">⏮</button>
+<button class="play" id="play" onclick="toggle()">▶</button>
+<button onclick="loop()">🔁</button>
+<button onclick="next()">⏭</button>
 </div>
 
-<input type="range" id="scrub" value="0" oninput="manualSeek(this.value)">
+<input id="seek" type="range" value="0">
 
-<div class="vol-cell">
-    <span id="v-val">20</span>
-    <input type="range" min="0" max="100" value="20" oninput="changeVol(this.value)">
+<div class="vol">
+<span id="v-val">20</span>
+<input id="vol" type="range" min="0" max="100" value="20">
 </div>
 
 </footer>
 
-<div id="player" style="position:absolute; top:-9999px;"></div>
+<div id="player" style="display:none;"></div>
 
 <script src="https://www.youtube.com/iframe_api"></script>
 
 <script>
-let yt, isLooping = false, hasEngaged = false, progressInterval;
+let yt, loopOn=false, unlocked=false, interval, volTimer;
 
-// UNLOCK
-function forceEngagement() {
-    if (!hasEngaged) {
-        document.getElementById('video-bg').play().catch(()=>{});
-        if (yt) yt.playVideo();
-        hasEngaged = true;
-    }
+// unlock mobile autoplay
+function unlock(){
+    if(unlocked) return;
+    document.getElementById('video-bg').play().catch(()=>{});
+    if(yt) yt.playVideo();
+    unlocked=true;
 }
 
-// YT READY
-function onYouTubeIframeAPIReady() {
-    yt = new YT.Player('player', {
-        height: '0',
-        width: '0',
-        events: {
-            onReady: (e) => e.target.setVolume(20),
-            onStateChange: (e) => {
-                if (e.data === 1) {
-                    document.getElementById('track-name').innerText =
-                        yt.getVideoData().title;
-
-                    document.getElementById('m-play').innerText = '⏸';
+// youtube ready
+function onYouTubeIframeAPIReady(){
+    yt=new YT.Player('player',{
+        events:{
+            onReady:e=>e.target.setVolume(20),
+            onStateChange:e=>{
+                if(e.data==1){
+                    document.getElementById('track-name').innerText=yt.getVideoData().title;
+                    document.getElementById('play').innerText='⏸';
                     startProgress();
-
-                } else if (e.data === 0) {
-                    isLooping ? yt.playVideo() : yt.nextVideo();
                 } else {
-                    document.getElementById('m-play').innerText = '▶';
+                    document.getElementById('play').innerText='▶';
+                }
+                if(e.data==0){
+                    loopOn?yt.playVideo():yt.nextVideo();
                 }
             }
         }
     });
 }
 
-// PROGRESS
-function startProgress() {
-    clearInterval(progressInterval);
-    progressInterval = setInterval(() => {
-        if (!yt) return;
-        document.getElementById('scrub').max = yt.getDuration();
-        document.getElementById('scrub').value = yt.getCurrentTime();
-    }, 500);
+// progress
+function startProgress(){
+    clearInterval(interval);
+    interval=setInterval(()=>{
+        if(!yt) return;
+        seek.max=yt.getDuration();
+        seek.value=yt.getCurrentTime();
+    },500);
 }
 
-// START
-function startProcess(val) {
-    if (!val || !yt) return;
-
-    const id = extractId(val);
-    if (id) {
+// search or play
+function start(v){
+    if(!yt) return;
+    let id=extract(v);
+    if(id){
         yt.loadVideoById(id);
-        setThumb(id);
-    } else {
-        runSearch(val);
-    }
-
-    document.getElementById('searchInp').value = '';
+        thumb(id);
+    } else search(v);
 }
 
-// ID
-function extractId(url) {
-    const match = url.match(/(?:v=|youtu\.be\/)([^&]+)/);
-    return match ? match[1] : null;
+// extract id
+function extract(u){
+    let m=u.match(/(?:v=|youtu.be\/)([^&]+)/);
+    return m?m[1]:null;
 }
 
-// THUMB
-function setThumb(id) {
-    document.getElementById('track-art').src =
-        `https://img.youtube.com/vi/${id}/mqdefault.jpg`;
+// thumbnail
+function thumb(id){
+    track-art.src=`https://img.youtube.com/vi/${id}/mqdefault.jpg`;
 }
 
-// SEARCH
-async function runSearch(q) {
-    try {
-        const r = await fetch(`https://pipedapi.kavin.rocks/search?q=${q}`);
-        const d = await r.json();
-
-        const g = document.getElementById('grid');
-        g.innerHTML = '';
-
-        d.items.slice(0,10).forEach(i => {
-            const id = extractId(i.url);
-            if (!id) return;
-
-            const div = document.createElement('div');
-            div.className = 'card';
-
-            div.onclick = () => {
-                yt.loadVideoById(id);
-                setThumb(id);
-            };
-
-            div.innerHTML = `
-                <img src="${i.thumbnail}">
-                <div class="card-info">${i.title}</div>
-            `;
-
-            g.appendChild(div);
+// search
+async function search(q){
+    try{
+        let r=await fetch(`https://pipedapi.kavin.rocks/search?q=${q}`);
+        let d=await r.json();
+        grid.innerHTML='';
+        d.items.slice(0,10).forEach(i=>{
+            let id=extract(i.url);
+            if(!id) return;
+            let c=document.createElement('div');
+            c.className='card';
+            c.onclick=()=>{yt.loadVideoById(id);thumb(id);}
+            c.innerHTML=`<img src="${i.thumbnail}"><div class="card-info">${i.title}</div>`;
+            grid.appendChild(c);
         });
-
-    } catch(e) {
-        console.log("Search failed");
-    }
+    }catch{}
 }
 
-// CONTROLS
-function togglePlay() {
-    yt.getPlayerState() === 1 ? yt.pauseVideo() : yt.playVideo();
+// controls
+function toggle(){
+    yt.getPlayerState()==1?yt.pauseVideo():yt.playVideo();
 }
+function next(){yt.nextVideo();}
+function prev(){yt.previousVideo();}
+function loop(){loopOn=!loopOn;}
 
-function toggleLoop() {
-    isLooping = !isLooping;
-    document.getElementById('loop-toggle').innerText =
-        isLooping ? "LOOP ON" : "LOOP";
-}
+// seek
+seek.oninput=()=>yt.seekTo(seek.value,true);
 
-function changeVol(v) {
-    yt.setVolume(v);
-    document.getElementById('v-val').innerText = v;
-}
+// PERFECT MOBILE VOLUME
+vol.oninput=()=>{
+    let v=vol.value;
+    v-val.innerText=v;
 
-function manualSeek(v) {
-    yt.seekTo(v, true);
-}
+    clearTimeout(volTimer);
+    volTimer=setTimeout(()=>yt.setVolume(v),80);
+};
+vol.onchange=()=>yt.setVolume(vol.value);
 </script>
 
 </body>
