@@ -31,16 +31,31 @@ filter:brightness(.45);
 z-index:-1;
 }
 
-/* HEADER */
-header{padding:12px;}
+/* HEADER + SEARCH + ADD BUTTON */
+header{
+padding:10px;
+display:flex;
+gap:8px;
+}
 .search{
-width:100%;
-padding:16px;
+flex:1;
+padding:14px;
 font-size:16px;
-border-radius:14px;
+border-radius:12px;
 border:none;
 background:rgba(0,0,0,.6);
 color:white;
+}
+#addBtn{
+padding:14px 16px;
+border:none;
+border-radius:12px;
+background:var(--accent);
+color:white;
+font-weight:bold;
+font-size:16px;
+cursor:pointer;
+flex-shrink:0;
 }
 
 /* GRID */
@@ -132,6 +147,7 @@ padding:10px;
 display:flex;
 align-items:center;
 justify-content:space-between;
+gap:10px;
 }
 
 /* VOLUME */
@@ -160,14 +176,13 @@ flex:1;
 </video>
 
 <header>
-<input class="search" id="search" placeholder="Search or paste URL"
-onkeydown="if(event.key==='Enter') start(this.value)">
+<input class="search" id="search" placeholder="Search or paste URL">
+<button id="addBtn">+ ADD</button>
 </header>
 
 <div class="grid" id="grid"></div>
 
 <footer>
-
 <div class="track">
 <img id="track-art">
 <div id="track-name">Aether</div>
@@ -183,31 +198,27 @@ onkeydown="if(event.key==='Enter') start(this.value)">
 
 <div class="bottom">
 <button onclick="loop()">🔁</button>
-
 <div class="vol">
 <span id="v-val">20</span>
 <input id="vol" type="range" min="0" max="100" value="20">
 </div>
 </div>
-
 </footer>
 
 <div id="player" style="display:none;"></div>
 
 <script src="https://www.youtube.com/iframe_api"></script>
-
 <script>
 let yt, loopOn=false, unlocked=false, interval, volTimer;
 
-// USER UNLOCK (FIXED)
+// UNLOCK MOBILE PLAY
 function unlock(){
 if(unlocked) return;
-
 document.getElementById('video-bg').play().catch(()=>{});
 unlocked=true;
 }
 
-// YOUTUBE READY
+// YT PLAYER
 function onYouTubeIframeAPIReady(){
 yt=new YT.Player('player',{
 events:{
@@ -238,46 +249,21 @@ seek.value=yt.getCurrentTime();
 },500);
 }
 
-// START
-function start(v){
-if(!yt) return;
-
-let id=extract(v);
-if(id){
-yt.loadVideoById(id);
-thumb(id);
-
-// FORCE PLAY AFTER LOAD (IMPORTANT FIX)
-setTimeout(()=>yt.playVideo(),200);
-
-}else{
-searchSongs(v);
-}
-}
-
-// EXTRACT
+// EXTRACT ID
 function extract(u){
-let m=u.match(/(?:v=|youtu.be\/)([^&]+)/);
+let m=u.match(/(?:v=|youtu\.be\/)([^&]+)/);
 return m?m[1]:null;
 }
 
-// THUMB
-function thumb(id){
-document.getElementById('track-art').src=
-`https://img.youtube.com/vi/${id}/mqdefault.jpg`;
-}
+// ADD SONG FUNCTION
+function addSong(url){
+let id=extract(url);
+if(!id) return alert("Invalid YouTube URL");
+thumb(id);
+yt.loadVideoById(id);
+setTimeout(()=>yt.playVideo(),200);
 
-// SEARCH
-async function searchSongs(q){
-try{
-let r=await fetch(`https://pipedapi.kavin.rocks/search?q=${q}`);
-let d=await r.json();
-
-grid.innerHTML='';
-d.items.slice(0,10).forEach(i=>{
-let id=extract(i.url);
-if(!id) return;
-
+// ADD TO GRID
 let c=document.createElement('div');
 c.className='card';
 c.onclick=()=>{
@@ -285,32 +271,23 @@ yt.loadVideoById(id);
 thumb(id);
 setTimeout(()=>yt.playVideo(),200);
 };
-
-c.innerHTML=`<img src="${i.thumbnail}">
-<div class="card-info">${i.title}</div>`;
-
-grid.appendChild(c);
-});
-}catch{}
+c.innerHTML=`<img src="https://img.youtube.com/vi/${id}/mqdefault.jpg"><div class="card-info">${url}</div>`;
+grid.prepend(c);
 }
 
-// PLAY BUTTON (FIXED)
+// THUMB
+function thumb(id){document.getElementById('track-art').src=`https://img.youtube.com/vi/${id}/mqdefault.jpg`;}
+
+// SEARCH BUTTON (for +ADD)
+document.getElementById('addBtn').onclick=()=>addSong(document.getElementById('search').value);
+
+// PLAY BUTTON
 function toggle(){
 if(!yt) return;
-
 let state=yt.getPlayerState();
-
-if(state===1){
-yt.pauseVideo();
-}else{
+if(state===1){yt.pauseVideo();}else{
 yt.playVideo();
-
-// retry for mobile
-setTimeout(()=>{
-if(yt.getPlayerState()!==1){
-yt.playVideo();
-}
-},300);
+setTimeout(()=>{if(yt.getPlayerState()!==1) yt.playVideo();},300);
 }
 }
 
@@ -322,11 +299,10 @@ function loop(){loopOn=!loopOn;}
 // SEEK
 seek.oninput=()=>yt.seekTo(seek.value,true);
 
-// VOLUME (SMOOTH)
+// VOLUME
 vol.oninput=()=>{
 let v=vol.value;
 v-val.innerText=v;
-
 clearTimeout(volTimer);
 volTimer=setTimeout(()=>yt.setVolume(v),80);
 };
